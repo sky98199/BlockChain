@@ -2,17 +2,19 @@ const Web3 = require('web3')
 var Tx = require('ethereumjs-tx').Transaction
 
 const web3 = new Web3('https://ropsten.infura.io/v3/232f3a89331e4ed4b5acdf7230a3b312') // - Infura RPC URL
-var transferAmount = 0
 
-const primAccount = '0x3b837C5A3Dbcc655e4069031feeC00A9757E7635' // Primary Account Address
+//var transferAmount = 0
 
-const destAddresses = ["0x9b14eeE99808BaB2a4C6492D37B4D771F75b7631","0xe8a43eFC2CE385AbA7465101262b03B0d2489c43","0x9ca3208d90Ce19f42F2e5FC435ADA5922cB34989","0x1F4aB29bDe4fb3b29d40577c55a7Ae7c1F973351","0x22aF8cf4dE24Cbb09D5D6DA6c6989E0e5315078a","0xFcCE91F39E2C001ED59204A9f321Ce741975E7dd","0x7A768244C32fB024B254acFbE2dFF59919b63898","0x754c68d82DF83699aD2179927c3F9312FF5590e7","0x40581B22EA850D3eC905A4D21f860A489b625d20","0x3f4D34336a1357a19BeBb824166Ac12FAC5676B3"]
+const primAccount = '0xA2ae949e8AaD8a06dB9d7a2b9F13F19cce8Fde18' // Primary Account Address
 
-//- Private key 
-const privateKey1 = Buffer.from('50e3710f12cef14ab8230fb1f859a63234c6b9fe3fe19079c6954931d3aae923', 'hex')
+fs = require('fs');
+let destAddresses = fs.readFileSync('accounts.txt', 'utf8').split('\r\n') //Read file with DestAddress
+
+//- PrimaryAccount Private key 
+const privateKey = Buffer.from('d061b60a335e8b1bf58bce23759cf91b2c0b174ba32a05768cec366296992765', 'hex')
 
 // - Deployed contract address
-const contractAddress = '0xad7967ec7ed3566f5cb1177631b804ac16c5f7f0'
+const contractAddress = '0x29ae23fefee88ed887af6640a2f0b00129bd3cbc'
 
 const contractABI = [
   {
@@ -272,7 +274,6 @@ const contractABI = [
 
 const contract = new web3.eth.Contract(contractABI, contractAddress)
 
-
 const getTransactionCount = async(account) => {
   return await web3.eth.getTransactionCount(account)
 }
@@ -285,7 +286,7 @@ const transferFunds = async(primAccount, account2, amount) => {
 
   let txCount = await getTransactionCount(primAccount)
 
-  console.log("txCount returned: " + txCount)
+  console.log("\n TransactionCount: " + txCount)
 
   const txObject = {
     nonce:    web3.utils.toHex(txCount),
@@ -297,17 +298,17 @@ const transferFunds = async(primAccount, account2, amount) => {
 
   const tx = new Tx(txObject, {chain:'ropsten', hardfork: 'petersburg'})
 
-  tx.sign(privateKey1)
+  tx.sign(privateKey)
 
   const serializedTx = tx.serialize()
   const raw = '0x' + serializedTx.toString('hex')
 
-  console.log("raw hex transaction: " + raw)
+  //console.log("raw hex transaction: " + raw)
 
-  console.log("about to send transaction")
+  console.log("\n Token Transfer in progress")
 
   let minedTransaction = await sendTransaction(raw)
-  console.log("transaction hash returned: " + minedTransaction.transactionHash)
+  console.log(" transaction hash returned: " + minedTransaction.transactionHash)
 
   return `txHash is: ${minedTransaction.transactionHash}`
 }
@@ -315,20 +316,21 @@ const transferFunds = async(primAccount, account2, amount) => {
 // async methods
  const getBalanceOf = async(account) => {
   let balanceOf = await contract.methods.balanceOf(account).call()
-  transferAmount = BigInt(balanceOf * (0.05)/10)
-  return `${account} is ${balanceOf}`
+  return balanceOf
 }
  
 
 const go = async() => {
   //for loop
   var balance=await getBalanceOf(primAccount)
-console.log(`Balance of Main Account: ${balance} `)
-var i;
+console.log(` Balance of Primary Account: ${balance} `)
+var i; 
   for (i = 0; i < destAddresses.length; i++) {
-    var balanceOfAccount=await getBalanceOf(destAddresses[i])
-     console.log((`Total Balance of ${i+1} Account: ${balanceOfAccount}`))
-      await transferFunds(primAccount, destAddresses[i], transferAmount)
+    balanceOfAccount=await getBalanceOf(destAddresses[i])
+    transferAmount = BigInt(balance * (0.05)/10)
+    console.log ('\n Distribution Amount = ' + transferAmount)
+     await transferFunds(primAccount, destAddresses[i], transferAmount)
+     console.log((`\n Balance of Dest account "${destAddresses[i]}" = ${balanceOfAccount}`))
     }
 }
 

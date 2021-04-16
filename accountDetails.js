@@ -260,11 +260,11 @@ const abi = [
 ] // Contract ABI
 
 
-const address = "0xad7967ec7ed3566f5cb1177631b804ac16c5f7f0" // Contract Address 
+const contractAddress = "0x29ae23fefee88ed887af6640a2f0b00129bd3cbc" // Contract Address 
 
-const owner = "0x3b837C5A3Dbcc655e4069031feeC00A9757E7635" // Primary Account
+const owner = "0xA2ae949e8AaD8a06dB9d7a2b9F13F19cce8Fde18" // Primary Account Address
 
-const contract = new web3.eth.Contract(abi, address)
+const contract = new web3.eth.Contract(abi, contractAddress)
 
 const getTotalSupply = async() => {
   let totSupply =  await contract.methods.totalSupply().call()
